@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostNet Global - Live Auto-Sync Portal</title>
+    <title>GhostNet Global - Social Network</title>
     <style>
         :root {
             --bg-color: #0f1115;
@@ -14,34 +14,12 @@
             --danger-color: #ff4d4d;
         }
 
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            user-select: none;
-        }
-
-        body {
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            overflow: hidden;
-        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; user-select: none; }
+        body { background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; height: 100vh; overflow: hidden; }
 
         .container {
-            width: 100%;
-            max-width: 450px;
-            background: var(--card-bg);
-            border: 1px solid #30363d;
-            border-radius: 12px;
-            padding: 25px;
-            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
-            max-height: 90vh;
-            overflow-y: auto;
+            width: 100%; max-width: 450px; background: var(--card-bg); border: 1px solid #30363d;
+            border-radius: 12px; padding: 25px; box-shadow: 0 8px 24px rgba(0,0,0,0.5); max-height: 90vh; overflow-y: auto;
         }
 
         .logo-area { text-align: center; margin-bottom: 15px; }
@@ -76,8 +54,8 @@
         .profile-pic { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-color); background: #333; cursor: pointer; }
 
         .nav-tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; }
-        .nav-tab { flex: 1; padding: 10px; text-align: center; font-size: 12px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
-        .nav-tab.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); font-weight: bold; }
+        .nav-tab { flex: 1; padding: 10px; text-align: center; font-size: 12px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; font-weight: 600; }
+        .nav-tab.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); }
 
         .content-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
         .card-box { background: #1f242d; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; margin-bottom: 8px; }
@@ -96,7 +74,7 @@
         <div class="logo-area">
             <div style="font-size: 30px;">🥷</div>
             <div class="logo-title" id="authTitle">GHOSTNET GLOBAL</div>
-            <div class="logo-sub">Secure Chat • Live Auto-Sync</div>
+            <div class="logo-sub">Facebook Style Social Chat</div>
         </div>
 
         <div id="loginRegisterForm">
@@ -105,7 +83,7 @@
                 <input type="text" id="username" placeholder="Enter unique ID...">
             </div>
             <div class="form-group" id="dobGroup" style="display: none;">
-                <label>Date of Birth (DOB for recovery)</label>
+                <label>Date of Birth (For Password Recovery)</label>
                 <input type="date" id="dateOfBirth">
             </div>
             <div class="form-group">
@@ -158,26 +136,30 @@
             <button class="btn btn-danger" style="width: auto; padding: 5px 10px; font-size: 11px; margin-top:0;" onclick="logout()">Logout</button>
         </div>
 
+        <!-- Facebook Style Navigation Tabs -->
         <div class="nav-tabs">
-            <div class="nav-tab active" onclick="switchTab('chatsTab', this)">Chats</div>
-            <div class="nav-tab" onclick="switchTab('discoverTab', this)">Discover Users</div>
-            <div class="nav-tab" onclick="switchTab('requestsTab', this)" id="requestTabLabel">Requests (0)</div>
+            <div class="nav-tab active" onclick="switchTab('chatsTab', this)">💬 Chats</div>
+            <div class="nav-tab" onclick="switchTab('discoverTab', this)">👥 Find Friends</div>
+            <div class="nav-tab" onclick="switchTab('requestsTab', this)" id="requestTabLabel">🔔 Requests (0)</div>
         </div>
 
         <div class="content-body" id="tabContentContainer">
+            <!-- Chats Tab -->
             <div id="chatsTab" class="tab-pane">
-                <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Your Friends:</h4>
+                <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Your Active Chats & Friends:</h4>
                 <div id="friendListContainer"></div>
             </div>
 
+            <!-- Discover Users / Find Friends Tab -->
             <div id="discoverTab" class="tab-pane" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <h4 style="font-size: 13px; color: var(--text-secondary);">Registered Users:</h4>
-                    <button class="btn" style="width: auto; padding: 4px 8px; font-size: 11px; margin-top:0;" onclick="sendRequestToAll()">⚡ Send Request to All</button>
+                    <h4 style="font-size: 13px; color: var(--text-secondary);">People You May Know:</h4>
+                    <button class="btn" style="width: auto; padding: 4px 8px; font-size: 11px; margin-top:0;" onclick="sendRequestToAll()">⚡ Add All Users</button>
                 </div>
                 <div id="allUsersContainer"></div>
             </div>
 
+            <!-- Requests Tab -->
             <div id="requestsTab" class="tab-pane" style="display: none;">
                 <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Friend Requests:</h4>
                 <div id="requestsContainer"></div>
@@ -215,7 +197,6 @@
     <script>
         let isRegisterMode = false;
         let currentUser = null;
-        let activeChatFriend = "";
         let liveSyncInterval = null;
 
         window.onload = function() {
@@ -296,26 +277,17 @@
             let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
 
             if(isRegisterMode) {
-                if(!dob) {
-                    alert("Please select your Date of Birth for security recovery!");
-                    return;
-                }
-                if(usersDb[user]) { 
-                    alert("ID already taken!"); 
-                    return; 
-                }
+                if(!dob) { alert("Please select your Date of Birth for security recovery!"); return; }
+                if(usersDb[user]) { alert("ID already taken!"); return; }
                 usersDb[user] = { password: pass, dob: dob, avatar: pic, friends: [], requests: [] };
                 localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-                alert("Account Created Successfully!");
+                alert("Account Created Successfully! You can now login.");
                 toggleMode();
             } else {
-                if(!usersDb[user]) {
-                    alert("User ID does not exist! Please check or register.");
-                    return;
-                }
+                if(!usersDb[user]) { alert("User ID does not exist! Please register first."); return; }
                 if(usersDb[user].password !== pass) {
                     document.getElementById('forgotLink').style.display = "block";
-                    alert("Incorrect Password! If you forgot your password, click 'Forgot Password? Reset with DOB' below.");
+                    alert("Incorrect Password!");
                     return;
                 }
                 currentUser = { username: user, avatar: usersDb[user].avatar };
@@ -329,11 +301,7 @@
             const dob = document.getElementById('resetDob').value;
             const newPass = document.getElementById('resetNewPass').value.trim();
 
-            if(!user || !dob || !newPass) {
-                alert("Please fill all fields!");
-                return;
-            }
-
+            if(!user || !dob || !newPass) { alert("Please fill all fields!"); return; }
             let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
             if(!usersDb[user]) { alert("User ID not found!"); return; }
             if(usersDb[user].dob !== dob) { alert("Incorrect Date of Birth!"); return; }
@@ -351,20 +319,15 @@
             document.getElementById('myAvatar').src = currentUser.avatar;
             refreshPortalData();
 
-            // Start Live Auto-Sync loop (Updates every 2 seconds automatically)
             if(liveSyncInterval) clearInterval(liveSyncInterval);
-            liveSyncInterval = setInterval(() => {
-                if(currentUser) {
-                    refreshPortalData();
-                }
-            }, 2000);
+            liveSyncInterval = setInterval(() => { if(currentUser) refreshPortalData(); }, 2000);
         }
 
         function refreshPortalData() {
             let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
             let uData = usersDb[currentUser.username] || { friends: [], requests: [] };
             document.getElementById('myFriendsCount').innerText = "Friends: " + (uData.friends ? uData.friends.length : 0);
-            document.getElementById('requestTabLabel').innerText = `Requests (${uData.requests ? uData.requests.length : 0})`;
+            document.getElementById('requestTabLabel').innerText = `🔔 Requests (${uData.requests ? uData.requests.length : 0})`;
             renderFriends(uData.friends || []);
             renderDiscoverUsers(usersDb);
             renderRequests(uData.requests || []);
@@ -379,7 +342,10 @@
 
         function renderFriends(friendList) {
             const container = document.getElementById('friendListContainer');
-            if(friendList.length === 0) { container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px;">No friends added yet.</p>`; return; }
+            if(friendList.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px; text-align: center; margin-top: 20px;">No friends added yet.<br>Click on <b>'Find Friends'</b> above to add people!</p>`;
+                return;
+            }
             container.innerHTML = "";
             let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
             friendList.forEach(f => {
@@ -390,7 +356,7 @@
                             <img src="${fData.avatar || 'https://i.imgur.com/6VBx3io.png'}" class="profile-pic" style="width: 38px; height: 38px;">
                             <div><div style="font-weight: bold; color: #fff; font-size: 13px;">@${f}</div></div>
                         </div>
-                        <button class="btn" style="width: auto; padding: 5px 10px; font-size: 12px; margin-top:0;" onclick="openChat('${f}', '${fData.avatar}')">Open Chat</button>
+                        <button class="btn" style="width: auto; padding: 5px 10px; font-size: 12px; margin-top:0;" onclick="openChat('${f}', '${fData.avatar}')">Chat</button>
                     </div>
                 `;
             });
@@ -408,10 +374,11 @@
                 if(u === currentUser.username) continue;
                 count++;
                 let isFriend = myFriends.includes(u);
-                let hasRequested = myRequests.includes(u);
-                let actionBtn = `<button class="btn" style="width: auto; padding: 5px 10px; font-size: 12px; margin-top:0;" onclick="sendFriendRequest('${u}')">Send Request</button>`;
-                if(isFriend) actionBtn = `<span style="font-size: 11px; color: var(--accent-color);">Connected</span>`;
-                else if(hasRequested) actionBtn = `<span style="font-size: 11px; color: var(--text-secondary);">Requested</span>`;
+                let isRequested = myRequests.includes(u);
+                
+                let actionBtn = `<button class="btn" style="width: auto; padding: 5px 10px; font-size: 12px; margin-top:0;" onclick="sendFriendRequest('${u}')">➕ Add Friend</button>`;
+                if(isFriend) actionBtn = `<span style="font-size: 11px; color: var(--accent-color); font-weight: bold;">✓ Friends</span>`;
+                else if(isRequested) actionBtn = `<span style="font-size: 11px; color: var(--text-secondary);">Request Sent</span>`;
 
                 container.innerHTML += `
                     <div class="card-box">
@@ -424,7 +391,7 @@
                 `;
             }
             if(count === 0) {
-                container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px;">No other users registered yet. Create another account to test!</p>`;
+                container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px; text-align: center;">No other users found. Register another account to test!</p>`;
             }
         }
 
@@ -435,7 +402,7 @@
                 if(!usersDb[targetUser].requests.includes(currentUser.username)) {
                     usersDb[targetUser].requests.push(currentUser.username);
                     localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-                    alert("Request sent to @" + targetUser + "!");
+                    alert("Friend request sent to @" + targetUser + "!");
                     refreshPortalData();
                 }
             }
@@ -462,16 +429,19 @@
 
         function renderRequests(reqList) {
             const container = document.getElementById('requestsContainer');
-            if(reqList.length === 0) { container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px;">No pending requests.</p>`; return; }
+            if(reqList.length === 0) {
+                container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px; text-align: center;">No pending friend requests.</p>`;
+                return;
+            }
             container.innerHTML = "";
             let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
             reqList.forEach(sender => {
                 container.innerHTML += `
                     <div class="card-box">
-                        <div style="font-weight: bold; color: #fff; font-size: 13px;">@${sender} wants to connect</div>
+                        <div style="font-weight: bold; color: #fff; font-size: 13px;">@${sender} sent you a request</div>
                         <div style="display: flex; gap: 5px;">
-                            <button class="btn" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="acceptRequest('${sender}')">Accept</button>
-                            <button class="btn btn-danger" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="rejectRequest('${sender}')">Reject</button>
+                            <button class="btn" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="acceptRequest('${sender}')">Confirm</button>
+                            <button class="btn btn-danger" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="rejectRequest('${sender}')">Delete</button>
                         </div>
                     </div>
                 `;
@@ -480,7 +450,7 @@
 
         function acceptRequest(sender) {
             let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            usersDb[currentUser.username].friends.push(sender);
+            if(!usersDb[currentUser.username].friends.includes(sender)) usersDb[currentUser.username].friends.push(sender);
             usersDb[currentUser.username].requests = usersDb[currentUser.username].requests.filter(r => r !== sender);
             if(!usersDb[sender].friends.includes(currentUser.username)) usersDb[sender].friends.push(currentUser.username);
             localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
@@ -495,12 +465,11 @@
         }
 
         function openChat(friend, avatar) {
-            activeChatFriend = friend;
             document.getElementById('portalScreen').style.display = 'none';
             document.getElementById('chatScreen').style.display = 'flex';
             document.getElementById('chattingWith').innerText = "@" + friend;
             document.getElementById('chatFriendAvatar').src = avatar || 'https://i.imgur.com/6VBx3io.png';
-            document.getElementById('chatBody').innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 11px;">⚡ Secure Encrypted Chat. 30s Auto-Wipe.</div>`;
+            document.getElementById('chatBody').innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 11px;">🔒 Secure Chat. Messages auto-wipe in 30s.</div>`;
         }
 
         function backToHome() {
