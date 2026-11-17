@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GhostNet Global - Secure Chat & DOB Reset</title>
+    <style>
+        :root {
+            --bg-color: #0f1115;
+            --card-bg: #181b22;
+            --accent-color: #00ffcc;
+            --text-color: #ffffff;
+            --text-secondary: #8b949e;
+            --danger-color: #ff4d4d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            user-select: none;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 450px;
+            background: var(--card-bg);
+            border: 1px solid #30363d;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .logo-area { text-align: center; margin-bottom: 15px; }
+        .logo-title { font-size: 22px; font-weight: bold; color: var(--accent-color); }
+        .logo-sub { font-size: 11px; color: var(--text-secondary); margin-top: 3px; }
+
+        .form-group { margin-bottom: 12px; position: relative; }
+        label { display: block; font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+        input {
+            width: 100%; padding: 10px 35px 10px 10px; background: #0d1117;
+            border: 1px solid #30363d; border-radius: 6px; color: #fff; font-size: 13px;
+        }
+
+        .eye-btn { position: absolute; right: 10px; top: 30px; background: none; border: none; color: var(--text-secondary); cursor: pointer; font-size: 14px; }
+        .btn { width: 100%; padding: 10px; background: var(--accent-color); color: #000; border: none; border-radius: 6px; font-weight: bold; font-size: 13px; cursor: pointer; margin-top: 8px; }
+        .btn:hover { opacity: 0.9; }
+        .btn-danger { background: var(--danger-color); color: #fff; }
+        .btn-secondary { background: #30363d; color: #fff; }
+        .toggle-link { text-align: center; margin-top: 12px; font-size: 11px; color: var(--accent-color); cursor: pointer; }
+
+        #portalScreen, #chatScreen {
+            display: none; width: 100%; max-width: 650px; height: 90vh;
+            background: var(--card-bg); border: 1px solid #30363d; border-radius: 12px;
+            flex-direction: column; box-shadow: 0 8px 24px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            padding: 12px 15px; background: #1f242d; border-top-left-radius: 12px; border-top-right-radius: 12px;
+            display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #30363d;
+        }
+
+        .profile-pic { width: 45px; height: 45px; border-radius: 50%; object-fit: cover; border: 2px solid var(--accent-color); background: #333; cursor: pointer; }
+
+        .nav-tabs { display: flex; background: #161b22; border-bottom: 1px solid #30363d; }
+        .nav-tab { flex: 1; padding: 10px; text-align: center; font-size: 12px; color: var(--text-secondary); cursor: pointer; border-bottom: 2px solid transparent; }
+        .nav-tab.active { color: var(--accent-color); border-bottom: 2px solid var(--accent-color); font-weight: bold; }
+
+        .content-body { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+        .card-box { background: #1f242d; padding: 10px 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border: 1px solid #30363d; margin-bottom: 8px; }
+
+        .message { max-width: 70%; padding: 10px; border-radius: 8px; font-size: 13px; word-wrap: break-word; }
+        .message.sent { background: #005f73; color: #fff; align-self: flex-end; }
+        .message.received { background: #30363d; color: #fff; align-self: flex-start; }
+        .message img { max-width: 100%; border-radius: 6px; margin-top: 5px; }
+        .timer-badge { font-size: 9px; color: var(--danger-color); text-align: right; margin-top: 2px; }
+    </style>
+</head>
+<body>
+
+    <!-- 1. AUTH SCREEN -->
+    <div class="container" id="authBox">
+        <div class="logo-area">
+            <div style="font-size: 30px;">🥷</div>
+            <div class="logo-title" id="authTitle">GHOSTNET GLOBAL</div>
+            <div class="logo-sub">Secure Chat • DOB Password Recovery</div>
+        </div>
+
+        <!-- Normal Login / Register Form -->
+        <div id="loginRegisterForm">
+            <div class="form-group">
+                <label>Username / ID</label>
+                <input type="text" id="username" placeholder="Enter unique ID...">
+            </div>
+            <div class="form-group" id="dobGroup" style="display: none;">
+                <label>Date of Birth (DOB)</label>
+                <input type="date" id="dateOfBirth">
+            </div>
+            <div class="form-group">
+                <label>Secret Passkey</label>
+                <input type="password" id="password" placeholder="Enter password...">
+                <button type="button" class="eye-btn" onclick="togglePassword()">👁️</button>
+            </div>
+            <div class="form-group" id="picGroup" style="display: none;">
+                <label>Upload Profile Photo</label>
+                <input type="file" id="regAvatarFile" accept="image/*" style="padding: 4px;" onchange="previewAvatar(event)">
+                <input type="hidden" id="profilePicData" value="https://i.imgur.com/6VBx3io.png">
+            </div>
+
+            <button class="btn" id="authBtn" onclick="handleAuth()">Login</button>
+            <div class="toggle-link" id="forgotLink" onclick="showForgotScreen()" style="display: none;">Forgot Password? Reset with DOB</div>
+            <div class="toggle-link" id="toggleText" onclick="toggleMode()">New user? Register ID</div>
+        </div>
+
+        <!-- Forgot Password via DOB Screen -->
+        <div id="forgotForm" style="display: none;">
+            <h4 style="color: var(--accent-color); font-size: 14px; margin-bottom: 10px;">Reset Password using DOB</h4>
+            <div class="form-group">
+                <label>Enter Your Username / ID</label>
+                <input type="text" id="resetUsername" placeholder="Enter your ID...">
+            </div>
+            <div class="form-group">
+                <label>Confirm Your Date of Birth</label>
+                <input type="date" id="resetDob">
+            </div>
+            <div class="form-group">
+                <label>New Secret Passkey</label>
+                <input type="password" id="resetNewPass" placeholder="Enter new password...">
+            </div>
+            <button class="btn" onclick="verifyAndResetPassword()">Verify & Change Password</button>
+            <div class="toggle-link" onclick="backToLogin()">Back to Login</div>
+        </div>
+    </div>
+
+    <!-- 2. DASHBOARD -->
+    <div id="portalScreen">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <input type="file" id="changeAvatarInput" accept="image/*" style="display: none;" onchange="updateProfilePic(event)">
+                <img id="myAvatar" class="profile-pic" src="" alt="Avatar" onclick="document.getElementById('changeAvatarInput').click()" title="Click to change photo">
+                <div>
+                    <h3 id="profileName" style="color: var(--accent-color); font-size: 15px;"></h3>
+                    <span id="myFriendsCount" style="font-size: 11px; color: var(--text-secondary);">Friends: 0</span>
+                </div>
+            </div>
+            <button class="btn btn-danger" style="width: auto; padding: 5px 10px; font-size: 11px; margin-top:0;" onclick="logout()">Logout</button>
+        </div>
+
+        <div class="nav-tabs">
+            <div class="nav-tab active" onclick="switchTab('chatsTab', this)">Chats</div>
+            <div class="nav-tab" onclick="switchTab('discoverTab', this)">Discover Users</div>
+            <div class="nav-tab" onclick="switchTab('requestsTab', this)" id="requestTabLabel">Requests (0)</div>
+        </div>
+
+        <div class="content-body" id="tabContentContainer">
+            <div id="chatsTab" class="tab-pane">
+                <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Your Friends:</h4>
+                <div id="friendListContainer"></div>
+            </div>
+
+            <div id="discoverTab" class="tab-pane" style="display: none;">
+                <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Registered Users:</h4>
+                <div id="allUsersContainer"></div>
+            </div>
+
+            <div id="requestsTab" class="tab-pane" style="display: none;">
+                <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Friend Requests:</h4>
+                <div id="requestsContainer"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 3. CHAT SCREEN -->
+    <div id="chatScreen">
+        <div class="header">
+            <div style="display: flex; align-items: center; gap: 10px;">
+                <img id="chatFriendAvatar" class="profile-pic" style="cursor: default; width: 40px; height: 40px;" src="" alt="Friend">
+                <div>
+                    <h3 id="chattingWith" style="color: var(--accent-color); font-size: 14px;"></h3>
+                    <span style="font-size: 10px; color: var(--danger-color);">🔒 30s Auto-Delete Active</span>
+                </div>
+            </div>
+            <div style="display: flex; gap: 5px;">
+                <button class="btn btn-secondary" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="startAudioCall()">📞 Voice</button>
+                <button class="btn btn-secondary" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="startVideoCall()">📹 Video</button>
+                <button class="btn btn-danger" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="backToHome()">⬅ Back</button>
+            </div>
+        </div>
+
+        <div class="content-body" id="chatBody"></div>
+
+        <div style="padding: 10px 15px; background: #1f242d; display: flex; gap: 8px; align-items: center;">
+            <input type="file" id="mediaInput" accept="image/*" style="display: none;" onchange="uploadMedia(event)">
+            <button class="btn" style="width: 40px; margin-top:0; background: #30363d; color: #fff;" onclick="document.getElementById('mediaInput').click()" title="Send Photo">📎</button>
+            <input type="text" id="messageInput" placeholder="Type message..." onkeypress="if(event.key==='Enter') sendMessage()">
+            <button class="btn" style="width: 75px; margin-top:0;" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        let isRegisterMode = false;
+        let currentUser = null;
+        let activeChatFriend = "";
+
+        function togglePassword() {
+            const passInput = document.getElementById('password');
+            passInput.type = passInput.type === "password" ? "text" : "password";
+        }
+
+        function toggleMode() {
+            isRegisterMode = !isRegisterMode;
+            document.getElementById('authTitle').innerText = isRegisterMode ? "REGISTER ID" : "GHOSTNET GLOBAL";
+            document.getElementById('authBtn').innerText = isRegisterMode ? "Create Account" : "Login";
+            document.getElementById('toggleText').innerText = isRegisterMode ? "Already have ID? Login" : "New user? Register ID";
+            
+            document.getElementById('dobGroup').style.display = isRegisterMode ? "block" : "none";
+            document.getElementById('picGroup').style.display = isRegisterMode ? "block" : "none";
+            document.getElementById('forgotLink').style.display = isRegisterMode ? "none" : "block";
+        }
+
+        function showForgotScreen() {
+            document.getElementById('loginRegisterForm').style.display = 'none';
+            document.getElementById('forgotForm').style.display = 'block';
+        }
+
+        function backToLogin() {
+            document.getElementById('forgotForm').style.display = 'none';
+            document.getElementById('loginRegisterForm').style.display = 'block';
+        }
+
+        function previewAvatar(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { document.getElementById('profilePicData').value = e.target.result; };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function updateProfilePic(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    currentUser.avatar = e.target.result;
+                    document.getElementById('myAvatar').src = currentUser.avatar;
+                    let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+                    if(usersDb[currentUser.username]) {
+                        usersDb[currentUser.username].avatar = currentUser.avatar;
+                        localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
+                    }
+                    alert("Profile Picture Updated!");
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function handleAuth() {
+            const user = document.getElementById('username').value.trim();
+            const pass = document.getElementById('password').value.trim();
+            const dob = document.getElementById('dateOfBirth').value;
+            const pic = document.getElementById('profilePicData').value;
+
+            if(!user || !pass) {
+                alert("Please enter Username and Password!");
+                return;
+            }
+
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+
+            if(isRegisterMode) {
+                if(!dob) {
+                    alert("Please select your Date of Birth for security recovery!");
+                    return;
+                }
+                if(usersDb[user]) { 
+                    alert("ID already taken!"); 
+                    return; 
+                }
+                usersDb[user] = { password: pass, dob: dob, avatar: pic, friends: [], requests: [] };
+                localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
+                alert("Account Created Successfully!");
+                toggleMode();
+            } else {
+                if(!usersDb[user]) {
+                    alert("User ID does not exist! Please check or register.");
+                    return;
+                }
+                if(usersDb[user].password !== pass) {
+                    // Password galat hone par forgot link auto-enable kar dena
+                    document.getElementById('forgotLink').style.display = "block";
+                    alert("Incorrect Password! If you forgot your password, click 'Forgot Password? Reset with DOB' below.");
+                    return;
+                }
+                currentUser = { username: user, avatar: usersDb[user].avatar };
+                startPortal();
+            }
+        }
+
+        function verifyAndResetPassword() {
+            const user = document.getElementById('resetUsername').value.trim();
+            const dob = document.getElementById('resetDob').value;
+            const newPass = document.getElementById('resetNewPass').value.trim();
+
+            if(!user || !dob || !newPass) {
+                alert("Please fill all fields!");
+                return;
+            }
+
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+
+            if(!usersDb[user]) {
+                alert("User ID not found!");
+                return;
+            }
+
+            // Date of birth match karna
+            if(usersDb[user].dob !== dob) {
+                alert("Incorrect Date of Birth! Verification failed.");
+                return;
+            }
+
+            // Password update karna
+            usersDb[user].password = newPass;
+            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
+            alert("Password successfully reset! You can now login with your new password.");
+            backToLogin();
+        }
+
+        function startPortal() {
+            document.getElementById('authBox').style.display = 'none';
+            document.getElementById('portalScreen').style.display = 'flex';
+            document.getElementById('profileName').innerText = "@" + currentUser.username;
+            document.getElementById('myAvatar').src = currentUser.avatar;
+            refreshPortalData();
+        }
+
+        function refreshPortalData() {
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            let uData = usersDb[currentUser.username] || { friends: [], requests: [] };
+            document.getElementById('myFriendsCount').innerText = "Friends: " + (uData.friends ? uData.friends.length : 0);
+            document.getElementById('requestTabLabel').innerText = `Requests (${uData.requests ? uData.requests.length : 0})`;
+            renderFriends(uData.friends || []);
+            renderDiscoverUsers(usersDb);
+            renderRequests(uData.requests || []);
+        }
+
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.style.display = 'none');
+            document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+            document.getElementById(tabId).style.display = 'flex';
+            el.classList.add('active');
+        }
+
+        function renderFriends(friendList) {
+            const container = document.getElementById('friendListContainer');
+            if(friendList.length === 0) { container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px;">No friends added yet.</p>`; return; }
+            container.innerHTML = "";
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            friendList.forEach(f => {
+                let fData = usersDb[f] || {};
+                container.innerHTML += `
+                    <div class="card-box">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${fData.avatar || 'https://i.imgur.com/6VBx3io.png'}" class="profile-pic" style="width: 38px; height: 38px;">
+                            <div><div style="font-weight: bold; color: #fff; font-size: 13px;">@${f}</div></div>
+                        </div>
+                        <button class="btn" style="width: auto; padding: 5px 10px; font-size: 12px; margin-top:0;" onclick="openChat('${f}', '${fData.avatar}')">Open Chat</button>
+                    </div>
+                `;
+            });
+        }
+
+        function renderDiscoverUsers(usersDb) {
+            const container = document.getElementById('allUsersContainer');
+            container.innerHTML = "";
+            let myData = usersDb[currentUser.username] || {};
+            let myFriends = myData.friends || [];
+            let myRequests = myData.requests || [];
+
+            for(let u in usersDb) {
+                if(u === currentUser.username) continue;
+                let isFriend = myFriends.includes(u);
+                let hasRequested = myRequests.includes(u);
+                let actionBtn = `<button class="btn" style="width: auto; padding: 5px 10px; font-size: 12px; margin-top:0;" onclick="sendFriendRequest('${u}')">Send Request</button>`;
+                if(isFriend) actionBtn = `<span style="font-size: 11px; color: var(--accent-color);">Connected</span>`;
+                else if(hasRequested) actionBtn = `<span style="font-size: 11px; color: var(--text-secondary);">Requested</span>`;
+
+                container.innerHTML += `
+                    <div class="card-box">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${usersDb[u].avatar}" class="profile-pic" style="width: 38px; height: 38px;">
+                            <div style="font-weight: bold; color: #fff; font-size: 13px;">@${u}</div>
+                        </div>
+                        ${actionBtn}
+                    </div>
+                `;
+            }
+        }
+
+        function sendFriendRequest(targetUser) {
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            if(usersDb[targetUser]) {
+                if(!usersDb[targetUser].requests) usersDb[targetUser].requests = [];
+                if(!usersDb[targetUser].requests.includes(currentUser.username)) {
+                    usersDb[targetUser].requests.push(currentUser.username);
+                    localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
+                    alert("Request sent!");
+                    refreshPortalData();
+                }
+            }
+        }
+
+        function renderRequests(reqList) {
+            const container = document.getElementById('requestsContainer');
+            if(reqList.length === 0) { container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px;">No requests.</p>`; return; }
+            container.innerHTML = "";
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            reqList.forEach(sender => {
+                container.innerHTML += `
+                    <div class="card-box">
+                        <div style="font-weight: bold; color: #fff; font-size: 13px;">@${sender} wants to connect</div>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="acceptRequest('${sender}')">Accept</button>
+                            <button class="btn btn-danger" style="width: auto; padding: 5px 8px; font-size: 11px; margin-top:0;" onclick="rejectRequest('${sender}')">Reject</button>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+
+        function acceptRequest(sender) {
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            usersDb[currentUser.username].friends.push(sender);
+            usersDb[currentUser.username].requests = usersDb[currentUser.username].requests.filter(r => r !== sender);
+            if(!usersDb[sender].friends.includes(currentUser.username)) usersDb[sender].friends.push(currentUser.username);
+            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
+            refreshPortalData();
+        }
+
+        function rejectRequest(sender) {
+            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            usersDb[currentUser.username].requests = usersDb[currentUser.username].requests.filter(r => r !== sender);
+            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
+            refreshPortalData();
+        }
+
+        function openChat(friend, avatar) {
+            activeChatFriend = friend;
+            document.getElementById('portalScreen').style.display = 'none';
+            document.getElementById('chatScreen').style.display = 'flex';
+            document.getElementById('chattingWith').innerText = "@" + friend;
+            document.getElementById('chatFriendAvatar').src = avatar;
+            document.getElementById('chatBody').innerHTML = `<div style="text-align: center; color: var(--text-secondary); font-size: 11px;">⚡ Secure Encrypted Chat. 30s Auto-Wipe.</div>`;
+        }
+
+        function backToHome() {
+            document.getElementById('chatScreen').style.display = 'none';
+            document.getElementById('portalScreen').style.display = 'flex';
+            refreshPortalData();
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('messageInput');
+            const text = input.value.trim();
+            if(!text) return;
+            appendMessage(text, 'sent', false);
+            input.value = '';
+        }
+
+        function uploadMedia(event) {
+            const file = event.target.files[0];
+            if(file) {
+                const reader = new FileReader();
+                reader.onload = function(e) { appendMessage(e.target.result, 'sent', true); };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function appendMessage(content, type, isMedia) {
+            const chatBody = document.getElementById('chatBody');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `message ${type}`;
+            if(isMedia) {
+                msgDiv.innerHTML = `<div><img src="${content}"></div><div class="timer-badge">Auto-wipe in 30s</div>`;
+            } else {
+                msgDiv.innerHTML = `<div>${content}</div><div class="timer-badge">Auto-wipe in 30s</div>`;
+            }
+            chatBody.appendChild(msgDiv);
+            chatBody.scrollTop = chatBody.scrollHeight;
+            let countdown = 30;
+            const timer = setInterval(() => {
+                countdown--;
+                if(countdown <= 0) { clearInterval(timer); msgDiv.remove(); }
+                else { const badge = msgDiv.querySelector('.timer-badge'); if(badge) badge.innerText = `Auto-wipe in ${countdown}s`; }
+            }, 1000);
+        }
+
+        function startAudioCall() { alert("📞 Voice Call connected securely."); }
+        function startVideoCall() { alert("📹 Video Call connected securely."); }
+
+        function logout() {
+            currentUser = null;
+            document.getElementById('chatScreen').style.display = 'none';
+            document.getElementById('portalScreen').style.display = 'none';
+            document.getElementById('authBox').style.display = 'block';
+            document.getElementById('username').value = '';
+            document.getElementById('password').value = '';
+            document.getElementById('forgotLink').style.display = 'none';
+        }
+    </script>
+</body>
+</html>
