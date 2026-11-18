@@ -3,7 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GhostNet Global - Social Network</title>
+    <title>GhostNet Global - Realtime Cloud Chat</title>
+    
+    <!-- Firebase SDK (Google Cloud Sync) -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+
     <style>
         :root {
             --bg-color: #0f1115;
@@ -74,7 +79,7 @@
         <div class="logo-area">
             <div style="font-size: 30px;">🥷</div>
             <div class="logo-title" id="authTitle">GHOSTNET GLOBAL</div>
-            <div class="logo-sub">Facebook Style Social Chat</div>
+            <div class="logo-sub">Global Cloud Social Network</div>
         </div>
 
         <div id="loginRegisterForm">
@@ -136,7 +141,6 @@
             <button class="btn btn-danger" style="width: auto; padding: 5px 10px; font-size: 11px; margin-top:0;" onclick="logout()">Logout</button>
         </div>
 
-        <!-- Facebook Style Navigation Tabs -->
         <div class="nav-tabs">
             <div class="nav-tab active" onclick="switchTab('chatsTab', this)">💬 Chats</div>
             <div class="nav-tab" onclick="switchTab('discoverTab', this)">👥 Find Friends</div>
@@ -144,13 +148,11 @@
         </div>
 
         <div class="content-body" id="tabContentContainer">
-            <!-- Chats Tab -->
             <div id="chatsTab" class="tab-pane">
                 <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Your Active Chats & Friends:</h4>
                 <div id="friendListContainer"></div>
             </div>
 
-            <!-- Discover Users / Find Friends Tab -->
             <div id="discoverTab" class="tab-pane" style="display: none;">
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                     <h4 style="font-size: 13px; color: var(--text-secondary);">People You May Know:</h4>
@@ -159,7 +161,6 @@
                 <div id="allUsersContainer"></div>
             </div>
 
-            <!-- Requests Tab -->
             <div id="requestsTab" class="tab-pane" style="display: none;">
                 <h4 style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">Friend Requests:</h4>
                 <div id="requestsContainer"></div>
@@ -195,18 +196,29 @@
     </div>
 
     <script>
+        // Firebase Configuration with your Database URL
+        const firebaseConfig = {
+            databaseURL: "https://ghostnet-2390d-default-rtdb.firebaseio.com" 
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.database();
+
         let isRegisterMode = false;
         let currentUser = null;
-        let liveSyncInterval = null;
+        let globalUsersCache = {};
 
         window.onload = function() {
             let savedUser = localStorage.getItem('ghost_logged_in_user');
             if(savedUser) {
-                let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-                if(usersDb[savedUser]) {
-                    currentUser = { username: savedUser, avatar: usersDb[savedUser].avatar };
-                    startPortal();
-                }
+                db.ref('users/' + savedUser).once('value').then((snapshot) => {
+                    let userData = snapshot.val();
+                    if(userData) {
+                        currentUser = { username: savedUser, avatar: userData.avatar };
+                        startPortal();
+                    }
+                });
             }
         };
 
@@ -252,11 +264,7 @@
                 reader.onload = function(e) {
                     currentUser.avatar = e.target.result;
                     document.getElementById('myAvatar').src = currentUser.avatar;
-                    let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-                    if(usersDb[currentUser.username]) {
-                        usersDb[currentUser.username].avatar = currentUser.avatar;
-                        localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-                    }
+                    db.ref('users/' + currentUser.username).update({ avatar: currentUser.avatar });
                     alert("Profile Picture Updated!");
                 };
                 reader.readAsDataURL(file);
@@ -264,52 +272,61 @@
         }
 
         function handleAuth() {
-            const user = document.getElementById('username').value.trim();
+            const rawUser = document.getElementById('username').value.trim();
+            const user = rawUser.replace(/[.#$\[\]\/]/g, "_");
             const pass = document.getElementById('password').value.trim();
             const dob = document.getElementById('dateOfBirth').value;
             const pic = document.getElementById('profilePicData').value;
 
-            if(!user || !pass) {
-                alert("Please enter Username and Password!");
-                return;
-            }
+            if(!user || !pass) { alert("Please enter Username and Password!"); return; }
 
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
+            db.ref('users/' + user).once('value').then((snapshot) => {
+                let userData = snapshot.val();
 
-            if(isRegisterMode) {
-                if(!dob) { alert("Please select your Date of Birth for security recovery!"); return; }
-                if(usersDb[user]) { alert("ID already taken!"); return; }
-                usersDb[user] = { password: pass, dob: dob, avatar: pic, friends: [], requests: [] };
-                localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-                alert("Account Created Successfully! You can now login.");
-                toggleMode();
-            } else {
-                if(!usersDb[user]) { alert("User ID does not exist! Please register first."); return; }
-                if(usersDb[user].password !== pass) {
-                    document.getElementById('forgotLink').style.display = "block";
-                    alert("Incorrect Password!");
-                    return;
+                if(isRegisterMode) {
+                    if(!dob) { alert("Please select your Date of Birth for security recovery!"); return; }
+                    if(userData) { alert("ID already taken!"); return; }
+                    
+                    db.ref('users/' + user).set({
+                        password: pass,
+                        dob: dob,
+                        avatar: pic,
+                        friends: { dummy: true },
+                        requests: { dummy: true }
+                    });
+                    alert("Account Created Successfully! You can now login.");
+                    toggleMode();
+                } else {
+                    if(!userData) { alert("User ID does not exist! Please register first."); return; }
+                    if(userData.password !== pass) {
+                        document.getElementById('forgotLink').style.display = "block";
+                        alert("Incorrect Password!");
+                        return;
+                    }
+                    currentUser = { username: user, avatar: userData.avatar };
+                    localStorage.setItem('ghost_logged_in_user', user);
+                    startPortal();
                 }
-                currentUser = { username: user, avatar: usersDb[user].avatar };
-                localStorage.setItem('ghost_logged_in_user', user);
-                startPortal();
-            }
+            });
         }
 
         function verifyAndResetPassword() {
-            const user = document.getElementById('resetUsername').value.trim();
+            const rawUser = document.getElementById('resetUsername').value.trim();
+            const user = rawUser.replace(/[.#$\[\]\/]/g, "_");
             const dob = document.getElementById('resetDob').value;
             const newPass = document.getElementById('resetNewPass').value.trim();
 
             if(!user || !dob || !newPass) { alert("Please fill all fields!"); return; }
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            if(!usersDb[user]) { alert("User ID not found!"); return; }
-            if(usersDb[user].dob !== dob) { alert("Incorrect Date of Birth!"); return; }
 
-            usersDb[user].password = newPass;
-            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-            alert("Password successfully reset!");
-            backToLogin();
+            db.ref('users/' + user).once('value').then((snapshot) => {
+                let userData = snapshot.val();
+                if(!userData) { alert("User ID not found!"); return; }
+                if(userData.dob !== dob) { alert("Incorrect Date of Birth!"); return; }
+
+                db.ref('users/' + user).update({ password: newPass });
+                alert("Password successfully reset!");
+                backToLogin();
+            });
         }
 
         function startPortal() {
@@ -317,20 +334,24 @@
             document.getElementById('portalScreen').style.display = 'flex';
             document.getElementById('profileName').innerText = "@" + currentUser.username;
             document.getElementById('myAvatar').src = currentUser.avatar;
-            refreshPortalData();
 
-            if(liveSyncInterval) clearInterval(liveSyncInterval);
-            liveSyncInterval = setInterval(() => { if(currentUser) refreshPortalData(); }, 2000);
+            db.ref('users').on('value', (snapshot) => {
+                globalUsersCache = snapshot.val() || {};
+                refreshPortalData();
+            });
         }
 
         function refreshPortalData() {
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            let uData = usersDb[currentUser.username] || { friends: [], requests: [] };
-            document.getElementById('myFriendsCount').innerText = "Friends: " + (uData.friends ? uData.friends.length : 0);
-            document.getElementById('requestTabLabel').innerText = `🔔 Requests (${uData.requests ? uData.requests.length : 0})`;
-            renderFriends(uData.friends || []);
-            renderDiscoverUsers(usersDb);
-            renderRequests(uData.requests || []);
+            let uData = globalUsersCache[currentUser.username] || { friends: {}, requests: {} };
+            let friendsList = uData.friends ? Object.keys(uData.friends).filter(f => f !== 'dummy') : [];
+            let requestsList = uData.requests ? Object.keys(uData.requests).filter(r => r !== 'dummy') : [];
+
+            document.getElementById('myFriendsCount').innerText = "Friends: " + friendsList.length;
+            document.getElementById('requestTabLabel').innerText = `🔔 Requests (${requestsList.length})`;
+            
+            renderFriends(friendsList);
+            renderDiscoverUsers();
+            renderRequests(requestsList);
         }
 
         function switchTab(tabId, el) {
@@ -347,9 +368,8 @@
                 return;
             }
             container.innerHTML = "";
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
             friendList.forEach(f => {
-                let fData = usersDb[f] || {};
+                let fData = globalUsersCache[f] || {};
                 container.innerHTML += `
                     <div class="card-box">
                         <div style="display: flex; align-items: center; gap: 10px;">
@@ -362,15 +382,15 @@
             });
         }
 
-        function renderDiscoverUsers(usersDb) {
+        function renderDiscoverUsers() {
             const container = document.getElementById('allUsersContainer');
             container.innerHTML = "";
-            let myData = usersDb[currentUser.username] || {};
-            let myFriends = myData.friends || [];
-            let myRequests = myData.requests || [];
+            let myData = globalUsersCache[currentUser.username] || {};
+            let myFriends = myData.friends ? Object.keys(myData.friends) : [];
+            let myRequests = myData.requests ? Object.keys(myData.requests) : [];
             let count = 0;
 
-            for(let u in usersDb) {
+            for(let u in globalUsersCache) {
                 if(u === currentUser.username) continue;
                 count++;
                 let isFriend = myFriends.includes(u);
@@ -383,7 +403,7 @@
                 container.innerHTML += `
                     <div class="card-box">
                         <div style="display: flex; align-items: center; gap: 10px;">
-                            <img src="${usersDb[u].avatar}" class="profile-pic" style="width: 38px; height: 38px;">
+                            <img src="${globalUsersCache[u].avatar}" class="profile-pic" style="width: 38px; height: 38px;">
                             <div style="font-weight: bold; color: #fff; font-size: 13px;">@${u}</div>
                         </div>
                         ${actionBtn}
@@ -391,40 +411,27 @@
                 `;
             }
             if(count === 0) {
-                container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px; text-align: center;">No other users found. Register another account to test!</p>`;
+                container.innerHTML = `<p style="color: var(--text-secondary); font-size: 12px; text-align: center;">No other users found online.</p>`;
             }
         }
 
         function sendFriendRequest(targetUser) {
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            if(usersDb[targetUser]) {
-                if(!usersDb[targetUser].requests) usersDb[targetUser].requests = [];
-                if(!usersDb[targetUser].requests.includes(currentUser.username)) {
-                    usersDb[targetUser].requests.push(currentUser.username);
-                    localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-                    alert("Friend request sent to @" + targetUser + "!");
-                    refreshPortalData();
-                }
-            }
+            db.ref('users/' + targetUser + '/requests/' + currentUser.username).set(true).then(() => {
+                alert("Friend request sent to @" + targetUser + "!");
+            });
         }
 
         function sendRequestToAll() {
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            let myData = usersDb[currentUser.username] || {};
-            let myFriends = myData.friends || [];
             let count = 0;
+            let myData = globalUsersCache[currentUser.username] || {};
+            let myFriends = myData.friends ? Object.keys(myData.friends) : [];
 
-            for(let u in usersDb) {
+            for(let u in globalUsersCache) {
                 if(u === currentUser.username || myFriends.includes(u)) continue;
-                if(!usersDb[u].requests) usersDb[u].requests = [];
-                if(!usersDb[u].requests.includes(currentUser.username)) {
-                    usersDb[u].requests.push(currentUser.username);
-                    count++;
-                }
+                db.ref('users/' + u + '/requests/' + currentUser.username).set(true);
+                count++;
             }
-            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
             alert("Friend requests sent to " + count + " users!");
-            refreshPortalData();
         }
 
         function renderRequests(reqList) {
@@ -434,7 +441,6 @@
                 return;
             }
             container.innerHTML = "";
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
             reqList.forEach(sender => {
                 container.innerHTML += `
                     <div class="card-box">
@@ -449,19 +455,14 @@
         }
 
         function acceptRequest(sender) {
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            if(!usersDb[currentUser.username].friends.includes(sender)) usersDb[currentUser.username].friends.push(sender);
-            usersDb[currentUser.username].requests = usersDb[currentUser.username].requests.filter(r => r !== sender);
-            if(!usersDb[sender].friends.includes(currentUser.username)) usersDb[sender].friends.push(currentUser.username);
-            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-            refreshPortalData();
+            db.ref('users/' + currentUser.username + '/friends/' + sender).set(true);
+            db.ref('users/' + sender + '/friends/' + currentUser.username).set(true);
+            db.ref('users/' + currentUser.username + '/requests/' + sender).remove();
+            alert("You are now friends with @" + sender + "!");
         }
 
         function rejectRequest(sender) {
-            let usersDb = JSON.parse(localStorage.getItem('ghost_global_users') || "{}");
-            usersDb[currentUser.username].requests = usersDb[currentUser.username].requests.filter(r => r !== sender);
-            localStorage.setItem('ghost_global_users', JSON.stringify(usersDb));
-            refreshPortalData();
+            db.ref('users/' + currentUser.username + '/requests/' + sender).remove();
         }
 
         function openChat(friend, avatar) {
@@ -475,7 +476,6 @@
         function backToHome() {
             document.getElementById('chatScreen').style.display = 'none';
             document.getElementById('portalScreen').style.display = 'flex';
-            refreshPortalData();
         }
 
         function sendMessage() {
@@ -518,7 +518,7 @@
         function startVideoCall() { alert("📹 Video Call connected securely."); }
 
         function logout() {
-            if(liveSyncInterval) clearInterval(liveSyncInterval);
+            db.ref('users').off();
             localStorage.removeItem('ghost_logged_in_user');
             currentUser = null;
             document.getElementById('chatScreen').style.display = 'none';
