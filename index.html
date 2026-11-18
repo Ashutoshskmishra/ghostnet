@@ -84,8 +84,8 @@
 
         <div id="loginRegisterForm">
             <div class="form-group">
-                <label>Username / ID</label>
-                <input type="text" id="username" placeholder="Enter unique ID...">
+                <label>Username / ID (No spaces or @ symbol)</label>
+                <input type="text" id="username" placeholder="Enter unique ID (e.g. ashutosh)...">
             </div>
             <div class="form-group" id="dobGroup" style="display: none;">
                 <label>Date of Birth (For Password Recovery)</label>
@@ -272,7 +272,7 @@
 
         function handleAuth() {
             const rawUser = document.getElementById('username').value.trim();
-            const user = rawUser.replace(/[.#$\[\]\/]/g, "_");
+            const user = rawUser.replace(/[@.#$\[\]\/]/g, "_"); // Removes @ and invalid firebase characters
             const pass = document.getElementById('password').value.trim();
             const dob = document.getElementById('dateOfBirth').value;
             const pic = document.getElementById('profilePicData').value;
@@ -311,7 +311,7 @@
 
         function verifyAndResetPassword() {
             const rawUser = document.getElementById('resetUsername').value.trim();
-            const user = rawUser.replace(/[.#$\[\]\/]/g, "_");
+            const user = rawUser.replace(/[@.#$\[\]\/]/g, "_");
             const dob = document.getElementById('resetDob').value;
             const newPass = document.getElementById('resetNewPass').value.trim();
 
