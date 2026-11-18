@@ -43,7 +43,7 @@
         .btn:hover { opacity: 0.9; }
         .btn-danger { background: var(--danger-color); color: #fff; }
         .btn-secondary { background: #30363d; color: #fff; }
-        .toggle-link { text-align: center; margin-top: 12px; font-size: 11px; color: var(--accent-color); cursor: pointer; }
+        .toggle-link { text-align: center; margin-top: 12px; font-size: 12px; color: var(--accent-color); cursor: pointer; text-decoration: underline; }
 
         #portalScreen, #chatScreen {
             display: none; width: 100%; max-width: 650px; height: 90vh;
@@ -196,12 +196,11 @@
     </div>
 
     <script>
-        // Firebase Configuration with your Database URL
+        // Firebase Configuration
         const firebaseConfig = {
             databaseURL: "https://ghostnet-2390d-default-rtdb.firebaseio.com" 
         };
 
-        // Initialize Firebase
         firebase.initializeApp(firebaseConfig);
         const db = firebase.database();
 
