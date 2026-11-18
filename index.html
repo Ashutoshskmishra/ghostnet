@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GhostNet Global - Realtime Cloud Chat</title>
     
-    <!-- Firebase SDK (Google Cloud Sync) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
 
@@ -43,7 +43,7 @@
         .btn:hover { opacity: 0.9; }
         .btn-danger { background: var(--danger-color); color: #fff; }
         .btn-secondary { background: #30363d; color: #fff; }
-        .toggle-link { text-align: center; margin-top: 12px; font-size: 12px; color: var(--accent-color); cursor: pointer; text-decoration: underline; }
+        .toggle-link { text-align: center; margin-top: 15px; font-size: 13px; color: var(--accent-color); cursor: pointer; text-decoration: underline; font-weight: 600; }
 
         #portalScreen, #chatScreen {
             display: none; width: 100%; max-width: 650px; height: 90vh;
@@ -84,26 +84,30 @@
 
         <div id="loginRegisterForm">
             <div class="form-group">
-                <label>Username / ID (No spaces or @ symbol)</label>
-                <input type="text" id="username" placeholder="Enter unique ID (e.g. ashutosh)...">
+                <label>Username / ID (No spaces, e.g. ashutosh)</label>
+                <input type="text" id="username" placeholder="Enter unique ID...">
             </div>
-            <div class="form-group" id="dobGroup" style="display: none;">
+            
+            <!-- Extra Register Fields -->
+            <div class="form-group register-field" id="dobGroup" style="display:none;">
                 <label>Date of Birth (For Password Recovery)</label>
                 <input type="date" id="dateOfBirth">
             </div>
+
             <div class="form-group">
                 <label>Secret Passkey</label>
                 <input type="password" id="password" placeholder="Enter password...">
                 <button type="button" class="eye-btn" onclick="togglePassword()">👁️</button>
             </div>
-            <div class="form-group" id="picGroup" style="display: none;">
+
+            <div class="form-group register-field" id="picGroup" style="display:none;">
                 <label>Upload Profile Photo</label>
                 <input type="file" id="regAvatarFile" accept="image/*" style="padding: 4px;" onchange="previewAvatar(event)">
                 <input type="hidden" id="profilePicData" value="https://i.imgur.com/6VBx3io.png">
             </div>
 
             <button class="btn" id="authBtn" onclick="handleAuth()">Login</button>
-            <div class="toggle-link" id="forgotLink" onclick="showForgotScreen()" style="display: none;">Forgot Password? Reset with DOB</div>
+            <div class="toggle-link" id="forgotLink" onclick="showForgotScreen()" style="display:none;">Forgot Password? Reset with DOB</div>
             <div class="toggle-link" id="toggleText" onclick="toggleMode()">New user? Register ID</div>
         </div>
 
@@ -226,15 +230,31 @@
             passInput.type = passInput.type === "password" ? "text" : "password";
         }
 
+        // Direct foolproof toggle mode function
         function toggleMode() {
             isRegisterMode = !isRegisterMode;
-            document.getElementById('authTitle').innerText = isRegisterMode ? "REGISTER ID" : "GHOSTNET GLOBAL";
-            document.getElementById('authBtn').innerText = isRegisterMode ? "Create Account" : "Login";
-            document.getElementById('toggleText').innerText = isRegisterMode ? "Already have ID? Login" : "New user? Register ID";
-            
-            document.getElementById('dobGroup').style.display = isRegisterMode ? "block" : "none";
-            document.getElementById('picGroup').style.display = isRegisterMode ? "block" : "none";
-            document.getElementById('forgotLink').style.display = isRegisterMode ? "none" : "block";
+            const titleEl = document.getElementById('authTitle');
+            const btnEl = document.getElementById('authBtn');
+            const toggleTextEl = document.getElementById('toggleText');
+            const forgotLinkEl = document.getElementById('forgotLink');
+            const dobGroup = document.getElementById('dobGroup');
+            const picGroup = document.getElementById('picGroup');
+
+            if(isRegisterMode) {
+                titleEl.innerText = "REGISTER ID";
+                btnEl.innerText = "Create Account";
+                toggleTextEl.innerText = "Already have ID? Login";
+                dobGroup.style.display = "block";
+                picGroup.style.display = "block";
+                forgotLinkEl.style.display = "none";
+            } else {
+                titleEl.innerText = "GHOSTNET GLOBAL";
+                btnEl.innerText = "Login";
+                toggleTextEl.innerText = "New user? Register ID";
+                dobGroup.style.display = "none";
+                picGroup.style.display = "none";
+                forgotLinkEl.style.display = "block";
+            }
         }
 
         function showForgotScreen() {
@@ -272,7 +292,7 @@
 
         function handleAuth() {
             const rawUser = document.getElementById('username').value.trim();
-            const user = rawUser.replace(/[@.#$\[\]\/]/g, "_"); // Removes @ and invalid firebase characters
+            const user = rawUser.replace(/[@.#$\[\]\/]/g, "_");
             const pass = document.getElementById('password').value.trim();
             const dob = document.getElementById('dateOfBirth').value;
             const pic = document.getElementById('profilePicData').value;
@@ -284,7 +304,7 @@
 
                 if(isRegisterMode) {
                     if(!dob) { alert("Please select your Date of Birth for security recovery!"); return; }
-                    if(userData) { alert("ID already taken!"); return; }
+                    if(userData) { alert("ID already taken! Please choose another."); return; }
                     
                     db.ref('users/' + user).set({
                         password: pass,
